@@ -37,9 +37,9 @@ class CircuitMatter:
         self.socketpool = socketpool
 
         if mdns_server is None:
-            from circuitmatter.utility.mdns.avahi import Avahi
+            from circuitmatter.utility.mdns.zeroconf import ZeroConf
 
-            mdns_server = Avahi()
+            mdns_server = ZeroConf()
         self.mdns_server = mdns_server
 
         if random_source is None:
