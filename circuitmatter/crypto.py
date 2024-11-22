@@ -2,7 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
-import enum
+try:
+    import enum
+except ImportError:
+
+    class Enum:
+        class IntEnum:
+            pass
+
+
 import hashlib
 import hmac
 import struct
@@ -122,6 +130,25 @@ class MatterCertificate(tlv.Structure):
     signature = tlv.OctetStringMember(11, GROUP_SIZE_BYTES * 2)
 
 
+def DRBG_seed(seed):
+    random.seed(seed)
+
+
+def DRBG_bytes(byte_len: int) -> bytes:
+    """Matter spec DRBG() specifies length in bits."""
+    return random.randbytes(n)
+
+
+def DRBG_32() -> int:
+    """Return a 32-bit random unsigned int."""
+    return random.randrange(0, 0xFFFFFFFF)
+
+
+def TRNG_bytes(byte_len: int) -> bytes:
+    """Matter spec TRNG() specifies length in bits."""
+    return os.urandom(byte_len)
+
+
 def Hash(*message) -> bytes:
     h = hashlib.sha256()
     for m in message:
@@ -133,6 +160,24 @@ def HMAC(key, message) -> bytes:
     m = hmac.new(key, digestmod=hashlib.sha256)
     m.update(message)
     return m.digest()
+
+
+def GenerateKeyPair(random_source):
+    return ecdsa.keys.SigningKey.generate(
+        curve=ecdsa.NIST256p, hashfunc=hashlib.sha256, entropy=random_source
+    )
+
+
+def Sign_as_der(private_key, message):
+    return private_key.sign_deterministic(
+        message, hashfunc=hashlib.sha256, sigencode=ecdsa.util.sigencode_der_canonize
+    )
+
+
+def Sign_as_string(private_key, message):
+    return private_key.sign_deterministic(
+        message, hashfunc=hashlib.sha256, sigencode=ecdsa.util.sigencode_string
+    )
 
 
 def HKDF_Extract(salt, input_key) -> bytes:

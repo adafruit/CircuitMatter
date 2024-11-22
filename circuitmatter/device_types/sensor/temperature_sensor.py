@@ -1,10 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Ludovic BOUÉ
+#
+# SPDX-License-Identifier: MIT
+
+import random
+
 from circuitmatter.clusters.general.identify import Identify
 from circuitmatter.clusters.measurement.temperature_measurement import (
     TemperatureMeasurement,
 )
-from .. import simple_device
 
-import random
+from .. import simple_device
 
 
 class TemperatureSensor(simple_device.SimpleDevice):
@@ -20,6 +25,4 @@ class TemperatureSensor(simple_device.SimpleDevice):
         self._temp = TemperatureMeasurement()
         self.servers.append(self._temp)
 
-        self._temp.MeasuredValue = random.randint(
-            1500, 2500
-        )  # Random temp between 15°C and 25°C
+        self._temp.MeasuredValue = random.randint(1500, 2500)  # Random temp between 15°C and 25°C

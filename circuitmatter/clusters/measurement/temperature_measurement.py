@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Ludovic BOUÉ
+#
+# SPDX-License-Identifier: MIT
+
 from circuitmatter import data_model
 
 

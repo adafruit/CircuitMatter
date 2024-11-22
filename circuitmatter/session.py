@@ -608,9 +608,7 @@ class SessionManager:
             session_context.session_active_threshold = (
                 sigma1.initiatorSessionParams.session_active_threshold / 1000
             )
-        ephemeral_key_pair = ecdsa.keys.SigningKey.generate(
-            curve=ecdsa.NIST256p, hashfunc=hashlib.sha256, entropy=self.random.urandom
-        )
+        ephemeral_key_pair = crypto.GenerateKeyPair(self.random.urandom)
 
         ephemeral_public_key = ephemeral_key_pair.verifying_key.to_string(encoding="uncompressed")
 
@@ -632,10 +630,8 @@ class SessionManager:
 
         tbsdata = tbsdata.encode()
 
-        tbedata.signature = self.node_credentials.noc_keys[matching_noc].sign_deterministic(
-            tbsdata,
-            hashfunc=hashlib.sha256,
-            sigencode=ecdsa.util.sigencode_string,
+        tbedata.signature = crypto.Sign_as_string(
+            self.node_credentials.noc_keys[matching_noc], tbsdata
         )
         tbedata.resumptionID = session_context.resumption_id
 

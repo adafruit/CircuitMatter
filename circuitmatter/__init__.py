@@ -7,7 +7,7 @@
 import binascii
 import hashlib
 import json
-import pathlib
+import os
 import time
 
 from . import case, interaction_model, nonvolatile, session
@@ -48,8 +48,9 @@ class CircuitMatter:
             random_source = random
         self.random = random_source
 
-        state_file = pathlib.Path(state_filename)
-        if not state_file.exists():
+        try:
+            os.stat(state_filename)
+        except OSError:
             from circuitmatter import certificates
 
             initial_state = certificates.generate_initial_state(

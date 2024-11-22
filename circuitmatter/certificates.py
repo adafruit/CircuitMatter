@@ -11,7 +11,7 @@ import ecdsa
 from ecdsa import der
 from ecdsa.curves import NIST256p
 
-from . import pase, tlv
+from . import crypto, pase, tlv
 from .data_model import Enum8
 
 PAI_KEY_DER = b"\x30\x77\x02\x01\x01\x04\x20\xbb\x76\xa5\x80\x5f\x97\x26\x49\xaf\x1e\x8a\x87\xdc\x45\x57\xe6\x2c\x09\x00\xe5\x07\x09\xe8\x5c\x79\xc6\x44\xdf\x78\x90\xe5\x96\xa0\x0a\x06\x08\x2a\x86\x48\xce\x3d\x03\x01\x07\xa1\x44\x03\x42\x00\x04\x37\x5d\x2b\xc8\xc6\x15\x27\x5b\xfd\x84\x8b\x52\xfe\x21\x96\xe2\xa1\x4e\xf3\xcc\x91\xae\xf0\x5d\xff\x85\x1c\xbc\x19\xb1\xa9\x35\x45\x8c\xfe\x04\xaa\x42\x4e\x01\x6d\xe3\xd6\x74\xdc\x5b\x73\x29\xbd\x77\x57\xfd\xdb\x32\x38\xd6\x26\x73\x62\x9b\x3c\x79\x08\x45"  # noqa: E501 Line too long
@@ -87,11 +87,7 @@ def generate_certificates(vendor_id=0xFFF1, product_id=0x8000, device_type=22, p
     subject_key_identifier = (
         b"\x62\xfa\x82\x33\x59\xac\xfa\xa9\x96\x3e\x1c\xfa\x14\x0a\xdd\xf5\x04\xf3\x71\x60"
     )
-    signature = private_key.sign_deterministic(
-        declaration,
-        hashfunc=hashlib.sha256,
-        sigencode=ecdsa.util.sigencode_der_canonize,
-    )
+    signature = crypto.Sign_as_der(private_key, declaration)
 
     certification_declaration = []
     # version
@@ -133,9 +129,7 @@ def generate_certificates(vendor_id=0xFFF1, product_id=0x8000, device_type=22, p
 
 
 def generate_dac(vendor_id, product_id, product_name, random_source) -> tuple[bytes, bytes]:  # noqa: PLR0914 Too many locals
-    dac_key = ecdsa.keys.SigningKey.generate(
-        curve=ecdsa.NIST256p, hashfunc=hashlib.sha256, entropy=random_source.urandom
-    )
+    dac_key = crypto.GenerateKeyPair(random_source.urandom)
 
     version = der.encode_constructed(0, der.encode_integer(2))
     serial_number = der.encode_integer(1)
@@ -194,11 +188,7 @@ def generate_dac(vendor_id, product_id, product_name, random_source) -> tuple[by
     )
 
     pai_key = ecdsa.keys.SigningKey.from_der(PAI_KEY_DER, hashfunc=hashlib.sha256)
-    signature = pai_key.sign_deterministic(
-        certificate,
-        hashfunc=hashlib.sha256,
-        sigencode=ecdsa.util.sigencode_der_canonize,
-    )
+    signature = crypto.Sign_as_der(pai_key, certificate)
 
     dac_cert = der.encode_sequence(
         certificate, signature_algorithm, der.encode_bitstring(signature, unused=0)
