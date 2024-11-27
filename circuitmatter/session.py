@@ -8,7 +8,6 @@ import struct
 import time
 
 import cryptography
-import ecdsa
 from cryptography.hazmat.primitives.ciphers.aead import AESCCM
 
 from . import case, crypto, protocol, tlv

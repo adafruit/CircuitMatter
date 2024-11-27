@@ -215,3 +215,13 @@ def ECDH(private_key: ecdsa.keys.SigningKey, public_key: bytes) -> bytes:
     ecdh.load_private_key(private_key)
     ecdh.load_received_public_key_bytes(public_key)
     return ecdh.generate_sharedsecret_bytes()
+
+
+def key_from_bytes(key_bytes: bytes):
+    return ecdsa.keys.SigningKey.from_string(
+        key_bytes, curve=ecdsa.curves.NIST256p, hashfunc=hashlib.sha256
+    )
+
+
+def key_from_der(der):
+    return ecdsa.keys.SigningKey.from_der(der, hashfunc=hashlib.sha256)

@@ -7,10 +7,9 @@
 import binascii
 import hashlib
 
-import ecdsa
-from ecdsa import der
 from ecdsa.curves import NIST256p
 
+from . import cm_der as der
 from . import crypto, pase, tlv
 from .data_model import Enum8
 
@@ -79,10 +78,8 @@ def generate_certificates(vendor_id=0xFFF1, product_id=0x8000, device_type=22, p
 
     # From: https://github.com/project-chip/matter.js/blob/main/packages/protocol/src/certificate/CertificationDeclarationManager.ts
     # NIST256p is the same as secp256r1
-    private_key = ecdsa.keys.SigningKey.from_string(
+    private_key = crypto.key_from_bytes(
         b"\xae\xf3\x48\x41\x16\xe9\x48\x1e\xc5\x7b\xe0\x47\x2d\xf4\x1b\xf4\x99\x06\x4e\x50\x24\xad\x86\x9e\xca\x5e\x88\x98\x02\xd4\x80\x75",  # noqa: E501 Line too long
-        curve=ecdsa.curves.NIST256p,
-        hashfunc=hashlib.sha256,
     )
     subject_key_identifier = (
         b"\x62\xfa\x82\x33\x59\xac\xfa\xa9\x96\x3e\x1c\xfa\x14\x0a\xdd\xf5\x04\xf3\x71\x60"
@@ -187,7 +184,7 @@ def generate_dac(vendor_id, product_id, product_name, random_source) -> tuple[by
         extensions,
     )
 
-    pai_key = ecdsa.keys.SigningKey.from_der(PAI_KEY_DER, hashfunc=hashlib.sha256)
+    pai_key = crypto.key_from_der(PAI_KEY_DER)
     signature = crypto.Sign_as_der(pai_key, certificate)
 
     dac_cert = der.encode_sequence(

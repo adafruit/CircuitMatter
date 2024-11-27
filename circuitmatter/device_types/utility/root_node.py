@@ -7,9 +7,7 @@ import hashlib
 import struct
 import time
 
-import ecdsa
-from ecdsa import der
-
+from circuitmatter import cm_der as der
 from circuitmatter import crypto, interaction_model, tlv
 from circuitmatter.clusters.device_management.basic_information import (
     BasicInformationCluster,
@@ -125,9 +123,7 @@ class _NodeOperationalCredentialsCluster(NodeOperationalCredentialsCluster):
     def restore(self, nonvolatile):
         super().restore(nonvolatile)
 
-        self.dac_key = ecdsa.keys.SigningKey.from_der(
-            binascii.a2b_base64(nonvolatile["dac_key"]), hashfunc=hashlib.sha256
-        )
+        self.dac_key = crypto.key_from_der(binascii.a2b_base64(nonvolatile["dac_key"]))
 
         if "pk" not in nonvolatile:
             return
@@ -147,11 +143,7 @@ class _NodeOperationalCredentialsCluster(NodeOperationalCredentialsCluster):
                 root_cert.ec_pub_key[1:], fabric_id, b"CompressedFabric", 64
             )
             self.compressed_fabric_ids.append(compressed_fabric_id)
-            signing_key = ecdsa.keys.SigningKey.from_string(
-                binascii.a2b_base64(self.encoded_noc_keys[i]),
-                curve=ecdsa.NIST256p,
-                hashfunc=hashlib.sha256,
-            )
+            signing_key = crypto.key_from_bytes(binascii.a2b_base64(self.encoded_noc_keys[i]))
             self.noc_keys.append(signing_key)
 
             node_id = struct.pack(">Q", fabric.NodeID).hex().upper()
@@ -192,11 +184,7 @@ class _NodeOperationalCredentialsCluster(NodeOperationalCredentialsCluster):
         attestation_tbs = elements.tobytes() + session.attestation_challenge
         response = NodeOperationalCredentialsCluster.AttestationResponse()
         response.AttestationElements = elements
-        response.AttestationSignature = self.dac_key.sign_deterministic(
-            attestation_tbs,
-            hashfunc=hashlib.sha256,
-            sigencode=ecdsa.util.sigencode_string,
-        )
+        response.AttestationSignature = crypto.Sign_as_string(self.dac_key, attestation_tbs)
         return response
 
     def csr_request(
@@ -207,9 +195,7 @@ class _NodeOperationalCredentialsCluster(NodeOperationalCredentialsCluster):
         # Signing Request
 
         self.new_key_for_update = args.IsForUpdateNOC
-        self.pending_signing_key = ecdsa.keys.SigningKey.generate(
-            curve=ecdsa.NIST256p, hashfunc=hashlib.sha256, entropy=self.random.urandom
-        )
+        self.pending_signing_key = crypto.GenerateKeyPair(self.random.urandom)
 
         # DER encode the request
         # https://www.rfc-editor.org/rfc/rfc2986 Section 4.2
@@ -253,11 +239,7 @@ class _NodeOperationalCredentialsCluster(NodeOperationalCredentialsCluster):
         certification_request.append(signature_algorithm)
 
         # Signature
-        signature = self.pending_signing_key.sign_deterministic(
-            certification_request_info,
-            hashfunc=hashlib.sha256,
-            sigencode=ecdsa.util.sigencode_der_canonize,
-        )
+        signature = crypto.Sign_as_der(self.pending_signing_key, certification_request_info)
         certification_request.append(der.encode_bitstring(signature, unused=0))
 
         # Generate a new key pair.
@@ -275,9 +257,7 @@ class _NodeOperationalCredentialsCluster(NodeOperationalCredentialsCluster):
         #     AttestationSignature = tlv.OctetStringMember(1, 64)
         response = NodeOperationalCredentialsCluster.CSRResponse()
         response.NOCSRElements = elements
-        response.AttestationSignature = self.dac_key.sign_deterministic(
-            nocsr_tbs, hashfunc=hashlib.sha256, sigencode=ecdsa.util.sigencode_string
-        )
+        response.AttestationSignature = crypto.Sign_as_string(self.dac_key, nocsr_tbs)
         return response
 
     def add_trusted_root_certificate(
