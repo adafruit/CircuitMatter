@@ -3,7 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import socket
+
 from zeroconf import IPVersion, ServiceInfo, Zeroconf
+
 
 class ZeroConf:
     def __init__(self):
@@ -21,19 +23,19 @@ class ZeroConf:
     ):
         txt_records = [f"{key}={value}" for key, value in txt_records.items()]
         main_info = ServiceInfo(
-        f"{service_type}.{protocol}.local",
-        instance_name,
-        addresses=[socket.inet_aton("0.0.0.0")],
-        port=port,
-        properties=txt_records,
+            f"{service_type}.{protocol}.local",
+            instance_name,
+            addresses=[socket.inet_aton("0.0.0.0")],
+            port=port,
+            properties=txt_records,
         )
 
         sub_info = ServiceInfo(
-        subtypes,
-        instance_name,
-        addresses=[socket.inet_aton("0.0.0.0")],
-        port=port,
-        properties=txt_records,
+            subtypes,
+            instance_name,
+            addresses=[socket.inet_aton("0.0.0.0")],
+            port=port,
+            properties=txt_records,
         )
 
         self.zeroconf.register_service(main_info)
