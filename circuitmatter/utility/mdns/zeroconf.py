@@ -21,27 +21,27 @@ class ZeroConf:
         subtypes=[],
         instance_name="",
     ):
-        txt_records = [f"{key}={value}" for key, value in txt_records.items()]
+        txt_records = {key: value for key, value in txt_records.items()}
         main_info = ServiceInfo(
-            f"{service_type}.{protocol}.local",
-            instance_name,
+            f"{service_type}.{protocol}.local.",
+            f"{service_type}.{protocol}.local.",
             addresses=[socket.inet_aton("0.0.0.0")],
             port=port,
             properties=txt_records,
         )
-
-        sub_info = ServiceInfo(
-            subtypes,
-            instance_name,
-            addresses=[socket.inet_aton("0.0.0.0")],
-            port=port,
-            properties=txt_records,
-        )
-
         self.zeroconf.register_service(main_info)
-        self.zeroconf.register_service(sub_info)
         self.service_infos[service_type + instance_name] = main_info
-        self.service_infos[subtypes + instance_name] = sub_info
+
+        for subtype in subtypes:
+            sub_info = ServiceInfo(
+                f"{subtype}.local.",
+                f"{subtype}.local.",
+                addresses=[socket.inet_aton("0.0.0.0")],
+                port=port,
+                properties=txt_records,
+            )
+            self.service_infos[subtype] = sub_info
+            self.zeroconf.register_service(sub_info)
 
     def __del__(self):
         for service_info in self.service_infos.values():

@@ -9,24 +9,24 @@ from circuitmatter.device_types.lighting import on_off
 
 
 class LED(on_off.OnOffLight):
-    def __init__(self, name, led):
+    def __init__(self, name):
         super().__init__(name)
         self._name = name
-        self._led = led
+        self.state = False
 
     def on(self):
-        self._led.value = True
+        self.state = True
         print("Led %s is On", self._name)
 
     def off(self):
-        self._led.value = False
+        self.state = False
         print("Led %s is Off", self._name)
 
 
 matter = cm.CircuitMatter()
-led = LED("led1")
-matter.add_device(led)
-led = LED("led2")
-matter.add_device(led)
+led1 = LED("led1")
+matter.add_device(led1)
+led2 = LED("led2")
+matter.add_device(led2)
 while True:
     matter.process_packets()
