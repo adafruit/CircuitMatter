@@ -21,12 +21,7 @@ CircuitMatter is currently developed in CPython 3.12, the de facto implementatio
 
 ### Running on a Raspberry Pi SBC
 
-CircuitMatter uses [avahi tools](https://avahi.org) to manage MDNS on Linux. It must therefore be installed for it to work properly.
-```shell
-sudo apt-get install avahi-utils
-```
-
-Now, install CircuitMatter:
+Install CircuitMatter:
 
 ```shell
 pip install circuitmatter
@@ -203,7 +198,7 @@ To run CircuitMatter against a live Matter commissioner run:
 python examples/replay.py
 ```
 
-This will start up MDNS via avahi for discovery by the commissioner and then reply to received UDP packets. CircuitMatter currently doesn't fully commission so it can't act as any specific type of device yet. When it can, there will be examples.
+This will start up MDNS for discovery by the commissioner and then reply to received UDP packets. CircuitMatter currently doesn't fully commission so it can't act as any specific type of device yet. When it can, there will be examples.
 
 ## Running a Matter commissioner
 

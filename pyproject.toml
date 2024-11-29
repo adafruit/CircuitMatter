@@ -7,6 +7,7 @@ requires = [
     "setuptools",
     "wheel",
     "setuptools-scm",
+    "zeroconf",
 ]
 
 [project]
