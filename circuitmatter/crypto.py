@@ -12,10 +12,10 @@ except ImportError:
 
 
 import hashlib
-import hmac
+import cm_hmac as hmac
 import struct
 
-import ecdsa
+import cm_ecdsa as ecdsa
 
 from . import tlv
 

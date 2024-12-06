@@ -1,3 +1,4 @@
+
 # SPDX-FileCopyrightText: Copyright (c) 2024 Scott Shawcroft for Adafruit Industries
 #
 # SPDX-License-Identifier: MIT
@@ -6,8 +7,8 @@ import hashlib
 import struct
 
 from cryptography.hazmat.primitives.ciphers.aead import AESCCM
-from ecdsa.curves import NIST256p
-from ecdsa.ellipticcurve import AbstractPoint, Point, PointJacobi
+from cm_ecdsa.curves import NIST256p
+from cm_ecdsa.ellipticcurve import AbstractPoint, Point, PointJacobi
 
 from . import crypto, protocol, session, tlv
 

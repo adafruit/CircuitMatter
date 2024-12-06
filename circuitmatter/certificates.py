@@ -7,9 +7,9 @@
 import binascii
 import hashlib
 
-from ecdsa.curves import NIST256p
+from cm_ecdsa.curves import NIST256p
 
-from . import cm_der as der
+from cm_ecdsa import der
 from . import crypto, pase, tlv
 from .data_model import Enum8
 

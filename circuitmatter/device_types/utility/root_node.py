@@ -3,11 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 import binascii
-import hashlib
 import struct
 import time
 
-from circuitmatter import cm_der as der
+from cm_ecdsa import der
 from circuitmatter import crypto, interaction_model, tlv
 from circuitmatter.clusters.device_management.basic_information import (
     BasicInformationCluster,
