@@ -13,7 +13,7 @@ import circuitmatter as cm
 from circuitmatter.device_types.lighting import extended_color
 from circuitmatter.utility import random
 from circuitmatter.utility.mdns import DummyMDNS
-from circuitmatter.utility.mdns.avahi import Avahi
+from circuitmatter.utility.mdns.zeroconf import ZeroConf
 from circuitmatter.utility.recording import RecordingRandom, RecordingSocketPool
 from circuitmatter.utility.replay import ReplayRandom, ReplaySocketPool
 
@@ -73,7 +73,7 @@ def run(replay_file=None):
             # No starting state.
             record_file.write("none\n")
         socketpool = RecordingSocketPool(record_file, socket)
-        mdns_server = Avahi()
+        mdns_server = ZeroConf()
         random_source = RecordingRandom(record_file, random)
 
     matter = cm.CircuitMatter(socketpool, mdns_server, random_source, device_state)
