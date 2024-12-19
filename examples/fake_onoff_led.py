@@ -24,9 +24,9 @@ class LED(on_off.OnOffLight):
 
 
 matter = cm.CircuitMatter()
-led = LED("led1")
+led = LED("led1", None)
 matter.add_device(led)
-led = LED("led2")
+led = LED("led2", None)
 matter.add_device(led)
 while True:
     matter.process_packets()
