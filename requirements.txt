@@ -5,4 +5,5 @@
 cryptography
 ecdsa
 qrcode
+zeroconf
 Adafruit-Blinka
