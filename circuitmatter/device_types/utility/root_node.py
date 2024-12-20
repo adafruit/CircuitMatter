@@ -6,7 +6,6 @@ import binascii
 import struct
 import time
 
-from cm_ecdsa import der
 from circuitmatter import crypto, interaction_model, tlv
 from circuitmatter.clusters.device_management.basic_information import (
     BasicInformationCluster,
@@ -33,6 +32,7 @@ from circuitmatter.clusters.device_management.node_operational_credentials impor
 )
 from circuitmatter.clusters.system_model import user_label
 from circuitmatter.clusters.system_model.access_control import AccessControlCluster
+from cm_ecdsa import der
 
 from .. import simple_device
 

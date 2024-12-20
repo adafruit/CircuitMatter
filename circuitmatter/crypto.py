@@ -5,17 +5,16 @@
 try:
     import enum
 except ImportError:
-
-    class Enum:
+    class enum:
         class IntEnum:
             pass
 
-
 import hashlib
-import cm_hmac as hmac
 import struct
 
+from cm_sha import sha256
 import cm_ecdsa as ecdsa
+import cm_hmac as hmac
 
 from . import tlv
 
@@ -81,7 +80,7 @@ class DNAttribute(tlv.List):
     pseudonym_ps = tlv.OctetStringMember(143, 100)
 
 
-class BasicContraints(tlv.Structure):
+class BasicConstraints(tlv.Structure):
     # Section 6.5.11.1
     is_ca = tlv.BoolMember(1)
     path_len_constraint = tlv.IntMember(2, signed=False, octets=1, optional=True)
@@ -89,7 +88,7 @@ class BasicContraints(tlv.Structure):
 
 class Extensions(tlv.List):
     # Section 6.5.11
-    basic_cnstr = tlv.StructMember(1, BasicContraints)
+    basic_cnstr = tlv.StructMember(1, BasicConstraints)
     key_usage = tlv.IntMember(2, signed=False, octets=2)
     extended_key_usage = tlv.ArrayMember(
         3, tlv.IntMember(None, signed=False, octets=1), max_length=100
@@ -150,33 +149,33 @@ def TRNG_bytes(byte_len: int) -> bytes:
 
 
 def Hash(*message) -> bytes:
-    h = hashlib.sha256()
+    h = sha256()
     for m in message:
         h.update(m)
     return h.digest()
 
 
 def HMAC(key, message) -> bytes:
-    m = hmac.new(key, digestmod=hashlib.sha256)
+    m = hmac.new(key, digestmod=sha256)
     m.update(message)
     return m.digest()
 
 
 def GenerateKeyPair(random_source):
     return ecdsa.keys.SigningKey.generate(
-        curve=ecdsa.NIST256p, hashfunc=hashlib.sha256, entropy=random_source
+        curve=ecdsa.NIST256p, hashfunc=sha256, entropy=random_source
     )
 
 
 def Sign_as_der(private_key, message):
     return private_key.sign_deterministic(
-        message, hashfunc=hashlib.sha256, sigencode=ecdsa.util.sigencode_der_canonize
+        message, hashfunc=sha256, sigencode=ecdsa.util.sigencode_der_canonize
     )
 
 
 def Sign_as_string(private_key, message):
     return private_key.sign_deterministic(
-        message, hashfunc=hashlib.sha256, sigencode=ecdsa.util.sigencode_string
+        message, hashfunc=sha256, sigencode=ecdsa.util.sigencode_string
     )
 
 
@@ -194,7 +193,7 @@ def HKDF_Expand(prk, info, length) -> bytes:
     while num_bytes_generated < length:
         num_bytes_generated += HASH_LEN_BYTES
         # Do the hmac directly so we don't need to allocate a buffer for last_hash + info + i.
-        m = hmac.new(prk, digestmod=hashlib.sha256)
+        m = hmac.new(prk, digestmod=sha256)
         m.update(last_hash)
         m.update(info)
         m.update(struct.pack("b", i))
@@ -219,9 +218,9 @@ def ECDH(private_key: ecdsa.keys.SigningKey, public_key: bytes) -> bytes:
 
 def key_from_bytes(key_bytes: bytes):
     return ecdsa.keys.SigningKey.from_string(
-        key_bytes, curve=ecdsa.curves.NIST256p, hashfunc=hashlib.sha256
+        key_bytes, curve=ecdsa.curves.NIST256p, hashfunc=sha256
     )
 
 
 def key_from_der(der):
-    return ecdsa.keys.SigningKey.from_der(der, hashfunc=hashlib.sha256)
+    return ecdsa.keys.SigningKey.from_der(der, hashfunc=sha256)

@@ -15,10 +15,9 @@
 #   2008.11.14: Use pow(base, exponent, modulus) for modular_exp.
 #               Make gcd and lcm accept arbitrarily many arguments.
 
-import sys
-
 import math
 import random
+import sys
 
 
 class Error(Exception):

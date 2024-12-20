@@ -5,10 +5,11 @@
 """Pure Python implementation of the Matter IOT protocol."""
 
 import binascii
-import hashlib
 import json
 import os
 import time
+
+from cm_sha import sha256
 
 from . import case, interaction_model, nonvolatile, session
 from .device_types.utility.root_node import RootNode
@@ -113,7 +114,8 @@ class CircuitMatter:
         }
         from . import pase
 
-        pase.show_qr_code(self.vendor_id, self.product_id, discriminator, passcode)
+        if not pase.show_qr_code(self.vendor_id, self.product_id, discriminator, passcode):
+            print("QR code not available")
         print("Manual code:", self.nonvolatile["manual_code"])
         instance_name = self.random.urandom(8).hex().upper()
         self.mdns_server.advertise_service(
@@ -297,7 +299,7 @@ class CircuitMatter:
 
                 # This is Section 4.14.1.2
                 request = pase.PBKDFParamRequest.decode(message.application_payload)
-                exchange.commissioning_hash = hashlib.sha256(b"CHIP PAKE V1 Commissioning")
+                exchange.commissioning_hash = sha256(b"CHIP PAKE V1 Commissioning")
                 exchange.commissioning_hash.update(message.application_payload)
                 if request.passcodeId == 0:
                     pass

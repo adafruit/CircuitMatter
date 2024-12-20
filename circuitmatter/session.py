@@ -2,13 +2,20 @@
 #
 # SPDX-License-Identifier: MIT
 
-import enum
-import hashlib
 import struct
 import time
 
+try:
+    import enum
+except ImportError:
+    class enum:
+        class IntEnum:
+            pass
+
 import cryptography
 from cryptography.hazmat.primitives.ciphers.aead import AESCCM
+
+from cm_sha import sha256
 
 from . import case, crypto, protocol, tlv
 from .exchange import Exchange
@@ -635,7 +642,7 @@ class SessionManager:
         tbedata.resumptionID = session_context.resumption_id
 
         random = self.random.urandom(32)
-        exchange.transcript_hash = hashlib.sha256(sigma1.encode())
+        exchange.transcript_hash = sha256(sigma1.encode())
         salt = (
             identity_protection_key
             + random

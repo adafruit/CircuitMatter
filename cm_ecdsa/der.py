@@ -6,6 +6,7 @@
 # Derived from https://github.com/tlsfuzzer/python-ecdsa
 
 import binascii
+
 from ._compat import int2byte
 
 
@@ -126,9 +127,7 @@ def is_sequence(string):
 def remove_constructed(string):
     s0 = string[0]
     if (s0 & 0xE0) != 0xA0:
-        raise UnexpectedDER(
-            "wanted type 'constructed tag' (0xa0-0xbf), got 0x%02x" % s0
-        )
+        raise UnexpectedDER("wanted type 'constructed tag' (0xa0-0xbf), got 0x%02x" % s0)
     tag = s0 & 0x1F
     length, llen = read_length(string[1:])
     body = string[1 + llen : 1 + llen + length]
@@ -161,9 +160,7 @@ def remove_octet_string(string):
 
 def remove_object(string):
     if not string:
-        raise UnexpectedDER(
-            "Empty string does not encode an object identifier"
-        )
+        raise UnexpectedDER("Empty string does not encode an object identifier")
     if string[:1] != b"\x06":
         n = string[0]
         raise UnexpectedDER("wanted type 'object' (0x06), got 0x%02x" % n)
@@ -173,9 +170,7 @@ def remove_object(string):
     if not body:
         raise UnexpectedDER("Empty object identifier")
     if len(body) != length:
-        raise UnexpectedDER(
-            "Length of object identifier longer than the provided buffer"
-        )
+        raise UnexpectedDER("Length of object identifier longer than the provided buffer")
     numbers = []
     while body:
         n, ll = read_number(body)
@@ -194,9 +189,7 @@ def remove_object(string):
 
 def remove_integer(string):
     if not string:
-        raise UnexpectedDER(
-            "Empty string is an invalid encoding of an integer"
-        )
+        raise UnexpectedDER("Empty string is an invalid encoding of an integer")
     if string[:1] != b"\x02":
         n = string[0]
         raise UnexpectedDER("wanted type 'integer' (0x02), got 0x%02x" % n)
@@ -216,10 +209,7 @@ def remove_integer(string):
         # considered a negative number otherwise
         smsb = numberbytes[1]
         if smsb < 0x80:
-            raise UnexpectedDER(
-                "Invalid encoding of integer, unnecessary "
-                "zero padding bytes"
-            )
+            raise UnexpectedDER("Invalid encoding of integer, unnecessary zero padding bytes")
     return int(binascii.hexlify(numberbytes), 16), rest
 
 
@@ -378,21 +368,13 @@ def unpem(pem):
     if isinstance(pem, str):  # pragma: no branch
         pem = pem.encode()
 
-    d = b"".join(
-        [
-            l.strip()
-            for l in pem.split(b"\n")
-            if l and not l.startswith(b"-----")
-        ]
-    )
+    d = b"".join([l.strip() for l in pem.split(b"\n") if l and not l.startswith(b"-----")])
     return binascii.a2b_base64(d)
 
 
 def topem(der, name):
     b64 = binascii.b2a_base64(der, newline=False)
     lines = [("-----BEGIN %s-----\n" % name).encode()]
-    lines.extend(
-        [b64[start : start + 76] + b"\n" for start in range(0, len(b64), 76)]
-    )
+    lines.extend([b64[start : start + 76] + b"\n" for start in range(0, len(b64), 76)])
     lines.append(("-----END %s-----\n" % name).encode())
     return b"".join(lines)

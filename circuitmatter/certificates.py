@@ -5,11 +5,11 @@
 # This file should only be needed when generating certificates.
 
 import binascii
-import hashlib
-
-from cm_ecdsa.curves import NIST256p
 
 from cm_ecdsa import der
+from cm_ecdsa.curves import NIST256p
+from cm_sha import sha1
+
 from . import crypto, pase, tlv
 from .data_model import Enum8
 
@@ -165,7 +165,7 @@ def generate_dac(vendor_id, product_id, product_name, random_source) -> tuple[by
     key_usage = b"\x30\x0e\x06\x03\x55\x1d\x0f\x01\x01\xff\x04\x04\x03\x02\x07\x80"
     key_id = der.encode_sequence(
         der.encode_oid(2, 5, 29, 14),
-        der.encode_octet_string(der.encode_octet_string(hashlib.sha1(public_key).digest())),
+        der.encode_octet_string(der.encode_octet_string(sha1(public_key).digest())),
     )
     # ID of the CircuitMatter 0xFFF4 PAI
     authority_key_id = b"\x30\x1f\x06\x03\x55\x1d\x23\x04\x18\x30\x16\x80\x14\x07\xf8\x38\x0a\x5f\x01\x36\xfc\xe2\x36\xbd\x45\xf2\x88\xff\x22\xdc\xa6\xf4\xa7"  # noqa: E501 Line too long

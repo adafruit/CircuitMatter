@@ -41,12 +41,12 @@
 
 
 from . import numbertheory
-from ._compat import normalise_bytes, int_to_bytes, bytes_to_int
+from ._compat import bytes_to_int, int_to_bytes, normalise_bytes
 from .errors import MalformedPointError
-from .util import orderlen, string_to_number, number_to_string
+from .util import number_to_string, orderlen, string_to_number
 
 
-class CurveFp(object):
+class CurveFp:
     """
     :term:`Short Weierstrass Elliptic Curve <short Weierstrass curve>` over a
     prime field.
@@ -108,20 +108,11 @@ class CurveFp(object):
 
     def __str__(self):
         if self.__h is not None:
-            return "CurveFp(p={0}, a={1}, b={2}, h={3})".format(
-                self.__p,
-                self.__a,
-                self.__b,
-                self.__h,
-            )
-        return "CurveFp(p={0}, a={1}, b={2})".format(
-            self.__p,
-            self.__a,
-            self.__b,
-        )
+            return f"CurveFp(p={self.__p}, a={self.__a}, b={self.__b}, h={self.__h})"
+        return f"CurveFp(p={self.__p}, a={self.__a}, b={self.__b})"
 
 
-class AbstractPoint(object):
+class AbstractPoint:
     """Class for common methods of elliptic curve points."""
 
     @staticmethod
@@ -158,9 +149,7 @@ class AbstractPoint(object):
         try:
             beta = numbertheory.square_root_mod_prime(alpha, p)
         except numbertheory.Error as e:
-            raise MalformedPointError(
-                "Encoding does not correspond to a point on curve", e
-            )
+            raise MalformedPointError("Encoding does not correspond to a point on curve", e)
         if is_even == bool(beta & 1):
             y = p - beta
         else:
@@ -178,10 +167,7 @@ class AbstractPoint(object):
 
         # but validate if it's self-consistent if we're asked to do that
         if validate_encoding and (
-            y & 1
-            and data[:1] != b"\x07"
-            or (not y & 1)
-            and data[:1] != b"\x06"
+            y & 1 and data[:1] != b"\x07" or (not y & 1) and data[:1] != b"\x06"
         ):
             raise MalformedPointError("Inconsistent hybrid point encoding")
 
@@ -202,18 +188,12 @@ class AbstractPoint(object):
 
         y = bytes_to_int(data, "little")
 
-        x2 = (
-            (y * y - 1)
-            * numbertheory.inverse_mod(curve.d() * y * y - curve.a(), p)
-            % p
-        )
+        x2 = (y * y - 1) * numbertheory.inverse_mod(curve.d() * y * y - curve.a(), p) % p
 
         try:
             x = numbertheory.square_root_mod_prime(x2, p)
         except numbertheory.Error as e:
-            raise MalformedPointError(
-                "Encoding does not correspond to a point on curve", e
-            )
+            raise MalformedPointError("Encoding does not correspond to a point on curve", e)
 
         if x % 2 != x_0:
             x = -x % p
@@ -221,9 +201,7 @@ class AbstractPoint(object):
         return x, y
 
     @classmethod
-    def from_bytes(
-        cls, curve, data, validate_encoding=True, valid_encodings=None
-    ):
+    def from_bytes(cls, curve, data, validate_encoding=True, valid_encodings=None):
         """
         Initialise the object from byte encoding of a point.
 
@@ -255,44 +233,27 @@ class AbstractPoint(object):
         :rtype: tuple(int, int)
         """
         if not valid_encodings:
-            valid_encodings = set(
-                ["uncompressed", "compressed", "hybrid", "raw"]
-            )
+            valid_encodings = set(["uncompressed", "compressed", "hybrid", "raw"])
         if not all(
-            i in set(("uncompressed", "compressed", "hybrid", "raw"))
-            for i in valid_encodings
+            i in set(("uncompressed", "compressed", "hybrid", "raw")) for i in valid_encodings
         ):
-            raise ValueError(
-                "Only uncompressed, compressed, hybrid or raw encoding "
-                "supported."
-            )
+            raise ValueError("Only uncompressed, compressed, hybrid or raw encoding supported.")
         data = normalise_bytes(data)
 
         key_len = len(data)
         raw_encoding_length = 2 * orderlen(curve.p())
         if key_len == raw_encoding_length and "raw" in valid_encodings:
-            coord_x, coord_y = cls._from_raw_encoding(
-                data, raw_encoding_length
-            )
+            coord_x, coord_y = cls._from_raw_encoding(data, raw_encoding_length)
         elif key_len == raw_encoding_length + 1 and (
             "hybrid" in valid_encodings or "uncompressed" in valid_encodings
         ):
             if data[:1] in (b"\x06", b"\x07") and "hybrid" in valid_encodings:
-                coord_x, coord_y = cls._from_hybrid(
-                    data, raw_encoding_length, validate_encoding
-                )
+                coord_x, coord_y = cls._from_hybrid(data, raw_encoding_length, validate_encoding)
             elif data[:1] == b"\x04" and "uncompressed" in valid_encodings:
-                coord_x, coord_y = cls._from_raw_encoding(
-                    data[1:], raw_encoding_length
-                )
+                coord_x, coord_y = cls._from_raw_encoding(data[1:], raw_encoding_length)
             else:
-                raise MalformedPointError(
-                    "Invalid X9.62 encoding of the public point"
-                )
-        elif (
-            key_len == raw_encoding_length // 2 + 1
-            and "compressed" in valid_encodings
-        ):
+                raise MalformedPointError("Invalid X9.62 encoding of the public point")
+        elif key_len == raw_encoding_length // 2 + 1 and "compressed" in valid_encodings:
             coord_x, coord_y = cls._from_compressed(data, curve)
         else:
             raise MalformedPointError(
@@ -521,9 +482,7 @@ class PointJacobi(AbstractPoint):
         # compare the fractions by bringing them to the same denominator
         # depend on short-circuit to save 4 multiplications in case of
         # inequality
-        return (x1 * zz2 - x2 * zz1) % p == 0 and (
-            y1 * zz2 * z2 - y2 * zz1 * z1
-        ) % p == 0
+        return (x1 * zz2 - x2 * zz1) % p == 0 and (y1 * zz2 * z2 - y2 * zz1 * z1) % p == 0
 
     def __ne__(self, other):
         """Compare for inequality two points with each-other."""
@@ -611,9 +570,7 @@ class PointJacobi(AbstractPoint):
           multiplication table - useful for public point when verifying many
           signatures (around 100 or so) or for generator points of a curve.
         """
-        return PointJacobi(
-            point.curve(), point.x(), point.y(), 1, point.order(), generator
-        )
+        return PointJacobi(point.curve(), point.x(), point.y(), 1, point.order(), generator)
 
     # please note that all the methods that use the equations from
     # hyperelliptic
@@ -1025,11 +982,7 @@ class Point(AbstractPoint):
         if other is INFINITY:
             return self.__x is None or self.__y is None
         if isinstance(other, Point):
-            return (
-                self.__curve == other.__curve
-                and self.__x == other.__x
-                and self.__y == other.__y
-            )
+            return self.__curve == other.__curve and self.__x == other.__x and self.__y == other.__y
         return NotImplemented
 
     def __ne__(self, other):
@@ -1059,10 +1012,7 @@ class Point(AbstractPoint):
 
         p = self.__curve.p()
 
-        l = (
-            (other.__y - self.__y)
-            * numbertheory.inverse_mod(other.__x - self.__x, p)
-        ) % p
+        l = ((other.__y - self.__y) * numbertheory.inverse_mod(other.__x - self.__x, p)) % p
 
         x3 = (l * l - self.__x - other.__x) % p
         y3 = (l * (self.__x - x3) - self.__y) % p
@@ -1130,10 +1080,7 @@ class Point(AbstractPoint):
         p = self.__curve.p()
         a = self.__curve.a()
 
-        l = (
-            (3 * self.__x * self.__x + a)
-            * numbertheory.inverse_mod(2 * self.__y, p)
-        ) % p
+        l = ((3 * self.__x * self.__x + a) * numbertheory.inverse_mod(2 * self.__y, p)) % p
 
         if not l:
             return INFINITY

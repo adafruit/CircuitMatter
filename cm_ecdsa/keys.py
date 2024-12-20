@@ -9,27 +9,28 @@ Primary classes for performing signing and verification operations.
 """
 
 import binascii
-from hashlib import sha1
 import os
-from . import ecdsa
-from . import der
-from . import rfc6979
-from . import ellipticcurve
+
+from cm_sha import sha1
+
+from . import der, ecdsa, ellipticcurve, rfc6979
+from ._compat import normalise_bytes
 from .curves import Curve
 from .ecdsa import RSZeroError
-from .util import string_to_number, number_to_string, randrange
-from .util import sigencode_string, sigdecode_string
+from .ellipticcurve import PointJacobi
+from .errors import MalformedPointError
 from .util import (
-    oid_ecPublicKey,
+    MalformedSignature,
     encoded_oid_ecPublicKey,
+    number_to_string,
     oid_ecDH,
     oid_ecMQV,
-    MalformedSignature,
+    oid_ecPublicKey,
+    randrange,
+    sigdecode_string,
+    sigencode_string,
+    string_to_number,
 )
-from ._compat import normalise_bytes
-from .errors import MalformedPointError
-from .ellipticcurve import PointJacobi
-
 
 __all__ = [
     "BadSignatureError",
@@ -66,10 +67,7 @@ def _truncate_and_convert_digest(digest, curve, allow_truncate):
     if not allow_truncate:
         if len(digest) > curve.baselen:
             raise BadDigestError(
-                "this curve ({0}) is too short "
-                "for the length of your digest ({1})".format(
-                    curve.name, 8 * len(digest)
-                )
+                f"this curve ({curve.name}) is too short for the length of your digest ({8 * len(digest)})"
             )
     else:
         digest = digest[: curve.baselen]
@@ -93,7 +91,7 @@ def _truncate_and_convert_digest(digest, curve, allow_truncate):
     return number
 
 
-class VerifyingKey(object):
+class VerifyingKey:
     """
     Class for handling keys that can verify signatures (public keys).
 
@@ -109,9 +107,7 @@ class VerifyingKey(object):
     def __init__(self, _error__please_use_generate=None):
         """Unsupported, please use one of the classmethods to initialise."""
         if not _error__please_use_generate:
-            raise TypeError(
-                "Please use VerifyingKey.generate() to construct me"
-            )
+            raise TypeError("Please use VerifyingKey.generate() to construct me")
         self.curve = None
         self.default_hashfunc = None
         self.pubkey = None
@@ -122,9 +118,7 @@ class VerifyingKey(object):
             hash_name = self.default_hashfunc().name
         else:
             hash_name = "None"
-        return "VerifyingKey.from_string({0!r}, {1!r}, {2})".format(
-            pub_key, self.curve, hash_name
-        )
+        return f"VerifyingKey.from_string({pub_key!r}, {self.curve!r}, {hash_name})"
 
     def __eq__(self, other):
         """Return True if the points are identical, False otherwise."""
@@ -137,9 +131,7 @@ class VerifyingKey(object):
         return not self == other
 
     @classmethod
-    def from_public_point(
-        cls, point, curve, hashfunc, validate_point=True
-    ):
+    def from_public_point(cls, point, curve, hashfunc, validate_point=True):
         """
         Initialise the object from a Point object.
 
@@ -169,9 +161,7 @@ class VerifyingKey(object):
         self.curve = curve
         self.default_hashfunc = hashfunc
         try:
-            self.pubkey = ecdsa.Public_key(
-                curve.generator, point, validate_point
-            )
+            self.pubkey = ecdsa.Public_key(curve.generator, point, validate_point)
         except ecdsa.InvalidPointError:
             raise MalformedPointError("Point does not lay on the curve")
         self.pubkey.order = curve.order
@@ -196,9 +186,7 @@ class VerifyingKey(object):
            (if set to False) or if it should be delayed to the time of first
            use (when set to True)
         """
-        self.pubkey.point = ellipticcurve.PointJacobi.from_affine(
-            self.pubkey.point, True
-        )
+        self.pubkey.point = ellipticcurve.PointJacobi.from_affine(self.pubkey.point, True)
         # as precomputation in now delayed to the time of first use of the
         # point and we were asked specifically to precompute now, make
         # sure the precomputation is performed now to preserve the behaviour
@@ -207,12 +195,12 @@ class VerifyingKey(object):
 
     @classmethod
     def from_string(
-            cls,
-            string,
-            curve,
-            hashfunc,
-            validate_point=True,
-            valid_encodings=None,
+        cls,
+        string,
+        curve,
+        hashfunc,
+        validate_point=True,
+        valid_encodings=None,
     ):
         """
         Initialise the object from byte encoding of public key.
@@ -352,23 +340,19 @@ class VerifyingKey(object):
         # [[oid_ecPublicKey,oid_curve], point_str_bitstring]
         s1, empty = der.remove_sequence(string)
         if empty != b"":
-            raise der.UnexpectedDER(
-                "trailing junk after DER pubkey: %s" % binascii.hexlify(empty)
-            )
+            raise der.UnexpectedDER("trailing junk after DER pubkey: %s" % binascii.hexlify(empty))
         s2, point_str_bitstring = der.remove_sequence(s1)
         # s2 = oid_ecPublicKey,oid_curve
         oid_pk, rest = der.remove_object(s2)
         if not oid_pk == oid_ecPublicKey:
             raise der.UnexpectedDER(
-                "Unexpected object identifier in DER "
-                "encoding: {0!r}".format(oid_pk)
+                f"Unexpected object identifier in DER encoding: {oid_pk!r}"
             )
         curve = Curve.from_der(rest, valid_curve_encodings)
         point_str, empty = der.remove_bitstring(point_str_bitstring, 0)
         if empty != b"":
             raise der.UnexpectedDER(
-                "trailing junk after pubkey pointstring: %s"
-                % binascii.hexlify(empty)
+                "trailing junk after pubkey pointstring: %s" % binascii.hexlify(empty)
             )
         # raw encoding of point is invalid in DER files
         if len(point_str) == curve.verifying_key_length:
@@ -475,15 +459,11 @@ class VerifyingKey(object):
         sig = ecdsa.Signature(r, s)
 
         digest = normalise_bytes(digest)
-        digest_as_number = _truncate_and_convert_digest(
-            digest, curve, allow_truncate
-        )
+        digest_as_number = _truncate_and_convert_digest(digest, curve, allow_truncate)
         pks = sig.recover_public_keys(digest_as_number, generator)
 
         # Transforms the ecdsa.Public_key object into a VerifyingKey
-        verifying_keys = [
-            cls.from_public_point(pk.point, curve, hashfunc) for pk in pks
-        ]
+        verifying_keys = [cls.from_public_point(pk.point, curve, hashfunc) for pk in pks]
         return verifying_keys
 
     def to_string(self, encoding="raw"):
@@ -509,9 +489,7 @@ class VerifyingKey(object):
         assert encoding in ("raw", "uncompressed", "compressed", "hybrid")
         return self.pubkey.point.to_bytes(encoding)
 
-    def to_pem(
-        self, point_encoding="uncompressed", curve_parameters_encoding=None
-    ):
+    def to_pem(self, point_encoding="uncompressed", curve_parameters_encoding=None):
         """
         Convert the public key to the :term:`PEM` format.
 
@@ -540,9 +518,7 @@ class VerifyingKey(object):
             "PUBLIC KEY",
         )
 
-    def to_der(
-        self, point_encoding="uncompressed", curve_parameters_encoding=None
-    ):
+    def to_der(self, point_encoding="uncompressed", curve_parameters_encoding=None):
         """
         Convert the public key to the :term:`DER` format.
 
@@ -683,7 +659,7 @@ class VerifyingKey(object):
         raise BadSignatureError("Signature verification failed")
 
 
-class SigningKey(object):
+class SigningKey:
     """
     Class for handling keys that can create signatures (private keys).
 
@@ -780,15 +756,12 @@ class SigningKey(object):
         n = curve.order
         if not 1 <= secexp < n:
             raise MalformedPointError(
-                "Invalid value for secexp, expected integer "
-                "between 1 and {0}".format(n)
+                f"Invalid value for secexp, expected integer between 1 and {n}"
             )
         pubkey_point = curve.generator * secexp
         if hasattr(pubkey_point, "scale"):
             pubkey_point = pubkey_point.scale()
-        self.verifying_key = VerifyingKey.from_public_point(
-            pubkey_point, curve, hashfunc, False
-        )
+        self.verifying_key = VerifyingKey.from_public_point(pubkey_point, curve, hashfunc, False)
         pubkey = self.verifying_key.pubkey
         self.privkey = ecdsa.Private_key(pubkey, secexp)
         self.privkey.order = n
@@ -824,8 +797,7 @@ class SigningKey(object):
 
         if len(string) != curve.baselen:
             raise MalformedPointError(
-                "Invalid length of private key, received {0}, "
-                "expected {1}".format(len(string), curve.baselen)
+                f"Invalid length of private key, received {len(string)}, expected {curve.baselen}"
             )
         secexp = string_to_number(string)
         return cls.from_secret_exponent(secexp, curve, hashfunc)
@@ -947,9 +919,7 @@ class SigningKey(object):
 
         s, empty = der.remove_sequence(s)
         if empty != b"":
-            raise der.UnexpectedDER(
-                "trailing junk after DER privkey: %s" % binascii.hexlify(empty)
-            )
+            raise der.UnexpectedDER("trailing junk after DER privkey: %s" % binascii.hexlify(empty))
 
         version, s = der.remove_integer(s)
 
@@ -960,17 +930,14 @@ class SigningKey(object):
         if der.is_sequence(s):
             if version not in (0, 1):
                 raise der.UnexpectedDER(
-                    "expected version '0' or '1' at start of privkey, got %d"
-                    % version
+                    "expected version '0' or '1' at start of privkey, got %d" % version
                 )
 
             sequence, s = der.remove_sequence(s)
             algorithm_oid, algorithm_identifier = der.remove_object(sequence)
 
             if algorithm_oid not in (oid_ecPublicKey, oid_ecDH, oid_ecMQV):
-                raise der.UnexpectedDER(
-                    "unexpected algorithm identifier '%s'" % (algorithm_oid,)
-                )
+                raise der.UnexpectedDER("unexpected algorithm identifier '%s'" % (algorithm_oid,))
 
             curve = Curve.from_der(algorithm_identifier, valid_curve_encodings)
 
@@ -983,8 +950,7 @@ class SigningKey(object):
             s, empty = der.remove_sequence(s)
             if empty != b"":
                 raise der.UnexpectedDER(
-                    "trailing junk after DER privkey: %s"
-                    % binascii.hexlify(empty)
+                    "trailing junk after DER privkey: %s" % binascii.hexlify(empty)
                 )
 
             version, s = der.remove_integer(s)
@@ -992,8 +958,7 @@ class SigningKey(object):
         # The version of the ECPrivateKey must be 1.
         if version != 1:
             raise der.UnexpectedDER(
-                "expected version '1' at start of DER privkey, got %d"
-                % version
+                "expected version '1' at start of DER privkey, got %d" % version
             )
 
         privkey_str, s = der.remove_octet_string(s)
@@ -1001,9 +966,7 @@ class SigningKey(object):
         if not curve:
             tag, curve_oid_str, s = der.remove_constructed(s)
             if tag != 0:
-                raise der.UnexpectedDER(
-                    "expected tag 0 in DER privkey, got %d" % tag
-                )
+                raise der.UnexpectedDER("expected tag 0 in DER privkey, got %d" % tag)
             curve = Curve.from_der(curve_oid_str, valid_curve_encodings)
 
         # we don't actually care about the following fields
@@ -1020,9 +983,7 @@ class SigningKey(object):
 
         # our from_string method likes fixed-length privkey strings
         if len(privkey_str) < curve.baselen:
-            privkey_str = (
-                b"\x00" * (curve.baselen - len(privkey_str)) + privkey_str
-            )
+            privkey_str = b"\x00" * (curve.baselen - len(privkey_str)) + privkey_str
         return cls.from_string(privkey_str, curve, hashfunc)
 
     def to_string(self):
@@ -1116,15 +1077,11 @@ class SigningKey(object):
         ]
         if format == "ssleay":
             priv_key_elems.append(
-                der.encode_constructed(
-                    0, self.curve.to_der(curve_parameters_encoding)
-                )
+                der.encode_constructed(0, self.curve.to_der(curve_parameters_encoding))
             )
         # the 0 in encode_bitstring specifies the number of unused bits
         # in the `encoded_vk` string
-        priv_key_elems.append(
-            der.encode_constructed(1, der.encode_bitstring(encoded_vk, 0))
-        )
+        priv_key_elems.append(der.encode_constructed(1, der.encode_bitstring(encoded_vk, 0)))
         ec_private_key = der.encode_sequence(*priv_key_elems)
 
         if format == "ssleay":

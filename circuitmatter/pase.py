@@ -1,4 +1,3 @@
-
 # SPDX-FileCopyrightText: Copyright (c) 2024 Scott Shawcroft for Adafruit Industries
 #
 # SPDX-License-Identifier: MIT
@@ -7,6 +6,7 @@ import hashlib
 import struct
 
 from cryptography.hazmat.primitives.ciphers.aead import AESCCM
+
 from cm_ecdsa.curves import NIST256p
 from cm_ecdsa.ellipticcurve import AbstractPoint, Point, PointJacobi
 
@@ -274,9 +274,13 @@ def compute_qr_code(vendor_id, product_id, discriminator, passcode) -> str:
     return _base38_encode(buf)
 
 
-def show_qr_code(vendor_id, product_id, discriminator, passcode):
+def show_qr_code(vendor_id, product_id, discriminator, passcode) -> bool:
+    try:
+        import qrcode
+    except ImportError:
+        return False
+
     encoded = compute_qr_code(vendor_id, product_id, discriminator, passcode)
-    import qrcode
 
     qr = qrcode.QRCode(
         version=1,
@@ -288,3 +292,4 @@ def show_qr_code(vendor_id, product_id, discriminator, passcode):
     qr.add_data(encoded)
     print("QR code data: MT:" + encoded)
     qr.print_ascii()
+    return True

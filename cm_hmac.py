@@ -44,11 +44,7 @@ Implementation Notes
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/jimbobbennett/CircuitPython_HMAC.git"
 
-try:
-    import hashlib as _hashlib
-except ImportError:
-    import adafruit_hashlib as _hashlib
-
+from cm_sha import sha256
 
 TRANS_5C = bytes((x ^ 0x5C) for x in range(256))
 TRANS_36 = bytes((x ^ 0x36) for x in range(256))
@@ -78,12 +74,10 @@ class HMAC:
         """
 
         if not isinstance(key, (bytes, bytearray)):
-            raise TypeError(
-                "key: expected bytes or bytearray, but got %r" % type(key).__name__
-            )
+            raise TypeError("key: expected bytes or bytearray, but got %r" % type(key).__name__)
 
         if digestmod is None:
-            digestmod = _hashlib.sha256
+            digestmod = sha256
 
         if callable(digestmod):
             self.digest_cons = digestmod
@@ -120,16 +114,13 @@ class HMAC:
     def _translate(key, translation):
         return bytes(translation[x] for x in key)
 
-
     @property
     def name(self):
-        """Return the name of this object
-        """
+        """Return the name of this object"""
         return "hmac-" + self.inner.name
 
     def update(self, msg):
-        """Update this hashing object with the string msg.
-        """
+        """Update this hashing object with the string msg."""
         self.inner.update(msg)
 
     def copy(self):
@@ -165,8 +156,7 @@ class HMAC:
         return hmac.digest()
 
     def hexdigest(self):
-        """Like digest(), but returns a string of hexadecimal digits instead.
-        """
+        """Like digest(), but returns a string of hexadecimal digits instead."""
         hmac = self._current()
         return hmac.hexdigest()
 

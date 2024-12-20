@@ -17,7 +17,6 @@ try:
         return hashlib.new("shake256", msg).digest(outlen)
 
 except (TypeError, ValueError):
-
     from ._compat import bytes_to_int, int_to_bytes
 
     # From little endian.

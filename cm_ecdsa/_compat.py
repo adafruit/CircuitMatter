@@ -5,18 +5,15 @@
 #
 # Derived from https://github.com/tlsfuzzer/python-ecdsa
 
-import sys
-import re
 import binascii
+import re
+import sys
 
 
 def normalise_bytes(buffer_object):
     """Cast the input into array of bytes."""
     return memoryview(buffer_object).cast("B")
 
-def remove_whitespace(text):
-    """Removes all whitespace from passed in string"""
-    return re.sub(r"\s+", "", text, flags=re.UNICODE)
 
 def a2b_hex(val):
     try:
@@ -24,11 +21,13 @@ def a2b_hex(val):
     except Exception as e:
         raise ValueError("base16 error: %s" % e)
 
+
 # pylint: disable=invalid-name
 # pylint is stupid here and doesn't notice it's a function, not
 # constant
 bytes_to_int = int.from_bytes
 # pylint: enable=invalid-name
+
 
 def int_to_bytes(val, length=None, byteorder="big"):
     """Convert integer to bytes."""
@@ -42,5 +41,6 @@ def byte_length(val):
     length = val.bit_length()
     return (length + 7) // 8
 
+
 def int2byte(i):
-    return i.to_bytes(1, 'big')
+    return i.to_bytes(1, "big")

@@ -5,6 +5,7 @@
 #
 # Derived from https://github.com/tlsfuzzer/python-ecdsa
 
+
 class MalformedPointError(AssertionError):
     """Raised in case the encoding of private or public key is malformed."""
 

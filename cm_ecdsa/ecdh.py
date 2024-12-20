@@ -2,10 +2,9 @@
 Class for performing Elliptic-curve Diffie-Hellman (ECDH) operations.
 """
 
-from .util import number_to_string
 from .ellipticcurve import INFINITY
 from .keys import SigningKey, VerifyingKey
-
+from .util import number_to_string
 
 __all__ = [
     "ECDH",
@@ -42,7 +41,7 @@ class InvalidSharedSecretError(Exception):
     pass
 
 
-class ECDH(object):
+class ECDH:
     """
     Elliptic-curve Diffie-Hellman (ECDH). A key agreement protocol.
 
@@ -76,25 +75,14 @@ class ECDH(object):
 
     def _get_shared_secret(self, remote_public_key):
         if not self.private_key:
-            raise NoKeyError(
-                "Private key needs to be set to create shared secret"
-            )
+            raise NoKeyError("Private key needs to be set to create shared secret")
         if not self.public_key:
-            raise NoKeyError(
-                "Public key needs to be set to create shared secret"
-            )
-        if not (
-            self.private_key.curve == self.curve == remote_public_key.curve
-        ):
-            raise InvalidCurveError(
-                "Curves for public key and private key is not equal."
-            )
+            raise NoKeyError("Public key needs to be set to create shared secret")
+        if not (self.private_key.curve == self.curve == remote_public_key.curve):
+            raise InvalidCurveError("Curves for public key and private key is not equal.")
 
         # shared secret = PUBKEYtheirs * PRIVATEKEYours
-        result = (
-            remote_public_key.pubkey.point
-            * self.private_key.privkey.secret_multiplier
-        )
+        result = remote_public_key.pubkey.point * self.private_key.privkey.secret_multiplier
         if result == INFINITY:
             raise InvalidSharedSecretError("Invalid shared secret (INFINITY).")
 
@@ -162,9 +150,7 @@ class ECDH(object):
         """
         if not self.curve:
             raise NoCurveError("Curve must be set prior to key load.")
-        return self.load_private_key(
-            SigningKey.from_string(private_key, curve=self.curve)
-        )
+        return self.load_private_key(SigningKey.from_string(private_key, curve=self.curve))
 
     def load_private_key_der(self, private_key_der):
         """
@@ -237,9 +223,7 @@ class ECDH(object):
             raise InvalidCurveError("Curve mismatch.")
         self.public_key = public_key
 
-    def load_received_public_key_bytes(
-        self, public_key_str, valid_encodings=None
-    ):
+    def load_received_public_key_bytes(self, public_key_str, valid_encodings=None):
         """
         Load public key from byte string.
 
@@ -256,9 +240,7 @@ class ECDH(object):
         :type valid_encodings: :term:`set-like object`
         """
         return self.load_received_public_key(
-            VerifyingKey.from_string(
-                public_key_str, self.curve, valid_encodings
-            )
+            VerifyingKey.from_string(public_key_str, self.curve, valid_encodings)
         )
 
     def load_received_public_key_der(self, public_key_der):
@@ -276,9 +258,7 @@ class ECDH(object):
 
         :raises InvalidCurveError: public_key curve not the same as self.curve
         """
-        return self.load_received_public_key(
-            VerifyingKey.from_der(public_key_der)
-        )
+        return self.load_received_public_key(VerifyingKey.from_der(public_key_der))
 
     def load_received_public_key_pem(self, public_key_pem):
         """
@@ -295,9 +275,7 @@ class ECDH(object):
 
         :raises InvalidCurveError: public_key curve not the same as self.curve
         """
-        return self.load_received_public_key(
-            VerifyingKey.from_pem(public_key_pem)
-        )
+        return self.load_received_public_key(VerifyingKey.from_pem(public_key_pem))
 
     def generate_sharedsecret_bytes(self):
         """
@@ -312,9 +290,7 @@ class ECDH(object):
         :return: shared secret
         :rtype: bytes
         """
-        return number_to_string(
-            self.generate_sharedsecret(), self.private_key.curve.curve.p()
-        )
+        return number_to_string(self.generate_sharedsecret(), self.private_key.curve.curve.p())
 
     def generate_sharedsecret(self):
         """

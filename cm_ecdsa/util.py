@@ -17,14 +17,15 @@ respectively. See the :func:`sigencode_strings`, :func:`sigdecode_string`,
 :func:`sigdecode_der` functions.
 """
 
-import os
-import math
 import binascii
+import math
+import os
 import sys
-from hashlib import sha256
-from . import der
-from ._compat import normalise_bytes, int2byte
 
+from cm_sha import sha256
+
+from . import der
+from ._compat import int2byte, normalise_bytes
 
 # RFC5480:
 #   The "unrestricted" algorithm identifier is:
@@ -49,6 +50,7 @@ oid_ecDH = (1, 3, 132, 1, 12)
 #        ecmqv(13) }
 
 oid_ecMQV = (1, 3, 132, 1, 13)
+
 
 def entropy_to_bits(ent_256):
     """Convert a bytestring to string of 0's and 1's"""
@@ -99,9 +101,7 @@ class PRNG:
     def block_generator(self, seed):
         counter = 0
         while True:
-            for byte in sha256(
-                ("prng-%d-%s" % (counter, seed)).encode()
-            ).digest():
+            for byte in sha256(("prng-%d-%s" % (counter, seed)).encode()).digest():
                 yield byte
             counter += 1
 
@@ -404,8 +404,7 @@ def sigdecode_string(signature, order):
     l = orderlen(order)
     if not len(signature) == 2 * l:
         raise MalformedSignature(
-            "Invalid length of signature, expected {0} bytes long, "
-            "provided string is {1} bytes long".format(2 * l, len(signature))
+            f"Invalid length of signature, expected {2 * l} bytes long, provided string is {len(signature)} bytes long"
         )
     r = string_to_number_fixedlen(signature[:l], order)
     s = string_to_number_fixedlen(signature[l:], order)
@@ -433,9 +432,7 @@ def sigdecode_strings(rs_strings, order):
     """
     if not len(rs_strings) == 2:
         raise MalformedSignature(
-            "Invalid number of strings provided: {0}, expected 2".format(
-                len(rs_strings)
-            )
+            f"Invalid number of strings provided: {len(rs_strings)}, expected 2"
         )
     (r_str, s_str) = rs_strings
     r_str = normalise_bytes(r_str)
@@ -444,14 +441,14 @@ def sigdecode_strings(rs_strings, order):
     if not len(r_str) == l:
         raise MalformedSignature(
             "Invalid length of first string ('r' parameter), "
-            "expected {0} bytes long, provided string is {1} "
-            "bytes long".format(l, len(r_str))
+            f"expected {l} bytes long, provided string is {len(r_str)} "
+            "bytes long"
         )
     if not len(s_str) == l:
         raise MalformedSignature(
             "Invalid length of second string ('s' parameter), "
-            "expected {0} bytes long, provided string is {1} "
-            "bytes long".format(l, len(s_str))
+            f"expected {l} bytes long, provided string is {len(s_str)} "
+            "bytes long"
         )
     r = string_to_number_fixedlen(r_str, order)
     s = string_to_number_fixedlen(s_str, order)
@@ -487,16 +484,13 @@ def sigdecode_der(sig_der, order):
     # return der.encode_sequence(der.encode_integer(r), der.encode_integer(s))
     rs_strings, empty = der.remove_sequence(sig_der)
     if empty != b"":
-        raise der.UnexpectedDER(
-            "trailing junk after DER sig: %s" % binascii.hexlify(empty)
-        )
+        raise der.UnexpectedDER("trailing junk after DER sig: %s" % binascii.hexlify(empty))
     r, rest = der.remove_integer(rs_strings)
     s, empty = der.remove_integer(rest)
     if empty != b"":
-        raise der.UnexpectedDER(
-            "trailing junk after DER numbers: %s" % binascii.hexlify(empty)
-        )
+        raise der.UnexpectedDER("trailing junk after DER numbers: %s" % binascii.hexlify(empty))
     return r, s
 
+
 def int2byte(i):
-    return i.to_bytes(1, 'big')
+    return i.to_bytes(1, "big")

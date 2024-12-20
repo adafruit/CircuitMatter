@@ -6,9 +6,8 @@
 # Derived from https://github.com/tlsfuzzer/python-ecdsa
 
 from . import der, ecdsa, ellipticcurve
-from .util import orderlen, number_to_string, string_to_number
 from ._compat import normalise_bytes
-
+from .util import number_to_string, orderlen, string_to_number
 
 PRIME_FIELD_OID = (1, 2, 840, 10045, 1, 1)
 CHARACTERISTIC_TWO_FIELD_OID = (1, 2, 840, 10045, 1, 2)
@@ -34,9 +33,7 @@ class Curve:
 
     def __eq__(self, other):
         if isinstance(other, Curve):
-            return (
-                self.curve == other.curve and self.generator == other.generator
-            )
+            return self.curve == other.curve and self.generator == other.generator
         return NotImplemented
 
     def __ne__(self, other):
@@ -65,15 +62,12 @@ class Curve:
                 encoding = "explicit"
 
         if encoding not in ("named_curve", "explicit"):
-            raise ValueError(
-                "Only 'named_curve' and 'explicit' encodings supported"
-            )
+            raise ValueError("Only 'named_curve' and 'explicit' encodings supported")
 
         if encoding == "named_curve":
             if not self.oid:
                 raise UnknownCurveError(
-                    "Can't encode curve using named_curve encoding without "
-                    "associated curve OID"
+                    "Can't encode curve using named_curve encoding without associated curve OID"
                 )
             return der.encode_oid(*self.oid)
 
@@ -84,12 +78,8 @@ class Curve:
             der.encode_oid(*PRIME_FIELD_OID), der.encode_integer(curve_p)
         )
         curve = der.encode_sequence(
-            der.encode_octet_string(
-                number_to_string(self.curve.a() % curve_p, curve_p)
-            ),
-            der.encode_octet_string(
-                number_to_string(self.curve.b() % curve_p, curve_p)
-            ),
+            der.encode_octet_string(number_to_string(self.curve.a() % curve_p, curve_p)),
+            der.encode_octet_string(number_to_string(self.curve.b() % curve_p, curve_p)),
         )
         base = der.encode_octet_string(self.generator.to_bytes(point_encoding))
         order = der.encode_integer(self.generator.order())
@@ -114,9 +104,7 @@ class Curve:
         :return: PEM encoded ECParameters structure
         :rtype: str
         """
-        return der.topem(
-            self.to_der(encoding, point_encoding), "EC PARAMETERS"
-        )
+        return der.topem(self.to_der(encoding, point_encoding), "EC PARAMETERS")
 
     @staticmethod
     def from_der(data, valid_encodings=None):
@@ -132,15 +120,11 @@ class Curve:
         if not valid_encodings:
             valid_encodings = set(("named_curve", "explicit"))
         if not all(i in ["named_curve", "explicit"] for i in valid_encodings):
-            raise ValueError(
-                "Only named_curve and explicit encodings supported"
-            )
+            raise ValueError("Only named_curve and explicit encodings supported")
         data = normalise_bytes(data)
         if not der.is_sequence(data):
             if "named_curve" not in valid_encodings:
-                raise der.UnexpectedDER(
-                    "named_curve curve parameters not allowed"
-                )
+                raise der.UnexpectedDER("named_curve curve parameters not allowed")
             oid, empty = der.remove_object(data)
             if empty:
                 raise der.UnexpectedDER("Unexpected data after OID")
@@ -151,9 +135,7 @@ class Curve:
 
         seq, empty = der.remove_sequence(data)
         if empty:
-            raise der.UnexpectedDER(
-                "Unexpected data after ECParameters structure"
-            )
+            raise der.UnexpectedDER("Unexpected data after ECParameters structure")
         # decode the ECParameters sequence
         version, rest = der.remove_integer(seq)
         if version != 1:
@@ -173,14 +155,10 @@ class Curve:
         if field_type == CHARACTERISTIC_TWO_FIELD_OID:
             raise UnknownCurveError("Characteristic 2 curves unsupported")
         if field_type != PRIME_FIELD_OID:
-            raise UnknownCurveError(
-                "Unknown field type: {0}".format(field_type)
-            )
+            raise UnknownCurveError(f"Unknown field type: {field_type}")
         prime, empty = der.remove_integer(rest)
         if empty:
-            raise der.UnexpectedDER(
-                "Unexpected data after ECParameters.fieldID.Prime-p element"
-            )
+            raise der.UnexpectedDER("Unexpected data after ECParameters.fieldID.Prime-p element")
 
         # decode the ECParameters.curve sequence
         curve_a_bytes, rest = der.remove_octet_string(curve)
@@ -227,9 +205,7 @@ class Curve:
         if ec_param_index == -1:
             raise der.UnexpectedDER("EC PARAMETERS PEM header not found")
 
-        return cls.from_der(
-            der.unpem(string[ec_param_index:]), valid_encodings
-        )
+        return cls.from_der(der.unpem(string[ec_param_index:]), valid_encodings)
 
 
 NIST256p = Curve(
@@ -284,7 +260,5 @@ def curve_by_name(name):
         if name == c.name or (c.openssl_name and name == c.openssl_name):
             return c
     raise UnknownCurveError(
-        "Curve with name {0!r} unknown, only curves supported: {1}".format(
-            name, [c.name for c in curves]
-        )
+        f"Curve with name {name!r} unknown, only curves supported: {[c.name for c in curves]}"
     )

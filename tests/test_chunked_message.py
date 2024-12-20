@@ -22,34 +22,44 @@ def test_only_one():
     buf = bytearray(20)
     t = fill_array(4)
     end = t.encode_into(buf)
-    print(buf[:end].hex("x"))
-    assert buf[:end] == b"\x15\x36\x00\x04\x00\x04\x01\x04\x02\x04\x03\x18\x28\x02\x24\xff\x0b\x18"
+    correct = b"\x15\x36\x00\x04\x00\x04\x01\x04\x02\x04\x03\x18\x28\x02\x24\xff\x0b\x18"
+    print("result ", buf[:end].hex("-"))
+    print("correct", correct.hex("-"))
+    assert buf[:end] == correct
 
 
 def test_two_chunks():
     buf = bytearray(16)
     t = fill_array(4)
     end = t.encode_into(buf)
-    print(buf[:end].hex("x"))
-    assert buf[:end] == b"\x15\x36\x00\x04\x00\x04\x01\x18\x29\x01\x28\x02\x24\xff\x0b\x18"
+    correct =  b"\x15\x36\x00\x04\x00\x04\x01\x18\x29\x01\x28\x02\x24\xff\x0b\x18"
+    print("result ", buf[:end].hex("-"))
+    print("correct", correct.hex("-"))
+    assert buf[:end] == correct
 
     buf = bytearray(16)
     end = t.encode_into(buf)
-    print(buf[:end].hex("x"))
-    assert buf[:end] == b"\x15\x36\x00\x04\x02\x04\x03\x18\x28\x02\x24\xff\x0b\x18"
+    correct = b"\x15\x36\x00\x04\x02\x04\x03\x18\x28\x02\x24\xff\x0b\x18"
+    print("result ", buf[:end].hex("-"))
+    print("correct", correct.hex("-"))
+    assert buf[:end] == correct
 
 
 def test_two_chunks_odd():
     buf = bytearray(17)
     t = fill_array(4)
     end = t.encode_into(buf)
-    print(buf[:end].hex("x"))
-    assert buf[:end] == b"\x15\x36\x00\x04\x00\x04\x01\x18\x29\x01\x28\x02\x24\xff\x0b\x18"
+    correct = b"\x15\x36\x00\x04\x00\x04\x01\x18\x29\x01\x28\x02\x24\xff\x0b\x18"
+    print("result ", buf[:end].hex("-"))
+    print("correct", correct.hex("-"))
+    assert buf[:end] == correct
 
     buf = bytearray(17)
     end = t.encode_into(buf)
-    print(buf[:end].hex("x"))
-    assert buf[:end] == b"\x15\x36\x00\x04\x02\x04\x03\x18\x28\x02\x24\xff\x0b\x18"
+    correct =  b"\x15\x36\x00\x04\x02\x04\x03\x18\x28\x02\x24\xff\x0b\x18"
+    print("result ", buf[:end].hex("-"))
+    print("correct", correct.hex("-"))
+    assert buf[:end] == correct
 
 
 def test_three_chunks():
