@@ -32,12 +32,22 @@ TAG_LENGTH = b"\x00\x01\x02\x04\x02\x04\x06\x08"
 INT_SIZE = "BHIQ"
 
 
-def class_hierarchy(cls):
-    classes = set()
-    classes.add(cls)
-    for base in cls.__bases__:
-        classes.update(class_hierarchy(base))
-    return classes
+# mro implementation from https://stackoverflow.com/a/54261655/142996
+def _mro(cls):
+    """Implement __mro__ in Python, since CircuitPython and MicroPython don't have it."""
+    if cls is object:
+        return [object]
+    return [cls] + _mro_merge([_mro(base) for base in cls.__bases__])
+
+def _mro_merge(mros):
+    if not any(mros): # all lists are empty
+        return []  # base case
+    for candidate, *_ in mros:
+        if all(candidate not in tail for _, *tail in mros):
+            return [candidate] + _mro_merge([tail if head is candidate else [head, *tail]
+                                        for head, *tail in mros])
+    else:
+        raise TypeError("No legal mro")
 
 
 class ElementType(enum.IntEnum):
@@ -129,8 +139,8 @@ class Container:
 
     @classmethod
     def _members(cls) -> Iterable[tuple[str, Member]]:
-        for superclass in class_hierarchy(cls):
-            for field_name, descriptor in vars(superclass).items():
+        for superclass in _mro(cls):
+            for field_name, descriptor in superclass.__dict__.items():
                 if not field_name.startswith("_") and isinstance(descriptor, Member):
                     yield field_name, descriptor
 
@@ -140,7 +150,6 @@ class Container:
             return cls._members_by_tag_cache
         members = {}
         for field_name, descriptor in cls.__dict__.items():
-#        for field_name, descriptor in vars(cls).items():
             if not field_name.startswith("_") and isinstance(descriptor, Member):
                 members[descriptor.tag] = (field_name, descriptor)
         cls._members_by_tag_cache = members
@@ -177,10 +186,8 @@ class Structure(Container):
         return memoryview(buffer)[:end]
 
     def encode_into(self, buffer: bytearray, offset: int = 0) -> int:
-        print("Structure encode_into:", end="") #########
         for _, descriptor_class in self._members():
             offset = descriptor_class.encode_into(self, buffer, offset)
-        print()
         buffer[offset] = ElementType.END_OF_CONTAINER
         return offset + 1
 
@@ -289,7 +296,6 @@ class Member:
         anonymous_ok=False,
     ) -> int:
         value = self.__get__(obj)  # type: ignore  # self inference issues
-        print("Member encode_into:", "tag:", f"0x{self.tag:x}" if type(self.tag) is int else self.tag, "value:", f"0x{value:x}" if type(value) is int else value, type(value)) ########
         return self._encode_value_into(value, buffer, offset, anonymous_ok)
 
     def _encode_value_into(  # noqa: PLR0912 Too many branches
@@ -838,7 +844,6 @@ class List(Container):
     def encode_into(self, buffer: bytearray, offset: int = 0) -> int:
         member_by_tag = self._members_by_tag()
         for item in self.items:
-            print("List encode_into: ", end="") #########
             if isinstance(item, tuple):
                 tag, _ = item
                 if tag in member_by_tag:
@@ -848,7 +853,6 @@ class List(Container):
                 offset = member.encode_into(self, buffer, offset, anonymous_ok=True)
             else:
                 raise NotImplementedError("Anonymous list member")
-        print() #############
         buffer[offset] = ElementType.END_OF_CONTAINER
         return offset + 1
 

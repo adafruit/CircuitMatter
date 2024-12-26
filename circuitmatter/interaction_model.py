@@ -149,8 +149,7 @@ class ChunkedMessage(InteractionModelMessage):
     """Chunked messages take multiple encodes or decodes before they are complete."""
 
     def encode_into(self, buffer: memoryview, offset: int = 0) -> int:
-        print("ChunkedMessage encode_into: ", end="") #########
-        # Leave room for MoreChunkedMessages, SupressResponse, and InteractionModelRevision.
+        # Leave room for MoreChunkedMessages, SuppressResponse, and InteractionModelRevision.
         buffer[0] = tlv.ElementType.STRUCTURE
         offset += 1
         subbuffer = memoryview(buffer)[: -2 * 2 - 3 - 1]
@@ -160,7 +159,6 @@ class ChunkedMessage(InteractionModelMessage):
                 try:
                     offset = descriptor_class.encode_into(self, subbuffer, offset)
                 except tlv.ArrayEncodingError as e:
-                    print("splitting", name, f"[{e.index}:] offset {offset}")
                     offset = e.offset
                     tag = descriptor_class.tag
                     self.values[tag] = self.values[tag][e.index :]
@@ -168,7 +166,6 @@ class ChunkedMessage(InteractionModelMessage):
             else:
                 offset = descriptor_class.encode_into(self, buffer, offset)
         buffer[offset] = tlv.ElementType.END_OF_CONTAINER
-        print()
         return offset + 1
 
 
