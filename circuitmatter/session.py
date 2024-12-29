@@ -5,16 +5,8 @@
 import struct
 import time
 
-try:
-    import enum
-except ImportError:
-    class enum:
-        class IntEnum:
-            pass
-
-import cryptography
-from cryptography.hazmat.primitives.ciphers.aead import AESCCM
-
+import cm_enum as enum
+from cm_aesccm import AESCCM, InvalidTag
 from cm_sha import sha256
 
 from . import case, crypto, protocol, tlv
@@ -285,7 +277,7 @@ class SecureSessionContext(SessionContext):
             decrypted_payload = cipher.decrypt(
                 self._nonce, bytes(message.payload), bytes(message.header)
             )
-        except cryptography.exceptions.InvalidTag:
+        except InvalidTag:
             return False
 
         message.decrypted = True
@@ -684,7 +676,7 @@ class SessionManager:
         )
         try:
             decrypted = s3k_cipher.decrypt(b"NCASE_Sigma3N", sigma3.encrypted3, b"")
-        except cryptography.exceptions.InvalidTag:
+        except InvalidTag:
             return SecureChannelProtocolCode.INVALID_PARAMETER
         sigma3_tbe = case.Sigma3TbeData.decode(decrypted)
 

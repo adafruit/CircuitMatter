@@ -3,14 +3,17 @@
 # SPDX-License-Identifier: MIT
 
 import binascii
-import enum
-import inspect
 import random
 import struct
 import traceback
-import typing
-from collections.abc import Iterable
-from typing import Union
+
+try:
+    from collections.abc import Iterable
+    from typing import Union
+except ImportError:
+    pass
+
+import cm_enum as enum
 
 from . import interaction_model, tlv
 
@@ -232,7 +235,7 @@ class _PersistentList:
 
 class ListAttribute(Attribute):
     def __init__(self, _id, element_type, **kwargs):
-        if inspect.isclass(element_type) and issubclass(element_type, enum.Enum):
+        if isinstance(element_type, type) and issubclass(element_type, enum.Enum):
             element_type = tlv.EnumMember(None, element_type)
         self.tlv_type = tlv.ArrayMember(None, element_type)
         self._element_type = element_type

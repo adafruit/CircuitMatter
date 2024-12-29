@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import abc
-
 from circuitmatter.clusters.general import level_control
 
 from .on_off import OnOffLight
@@ -42,6 +40,5 @@ class DimmableLight(OnOffLight):
         return self._level_control.CurrentLevel / self._level_control.max_level
 
     @brightness.setter
-    @abc.abstractmethod
     def brightness(self, value):
         raise NotImplementedError()

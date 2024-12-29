@@ -6,8 +6,11 @@
 
 import os
 
+import adafruit_connection_manager
 import board
 import digitalio
+import mdns
+import wifi
 
 import circuitmatter as cm
 import cm_fake_random
@@ -35,7 +38,11 @@ class LED(on_off.OnOffLight):
         # self._led.value = False
 
 
-matter = cm.CircuitMatter(random_source=cm_fake_random)
+matter = cm.CircuitMatter(
+    socketpool=adafruit_connection_manager.get_radio_socketpool(wifi.radio),
+    mdns_server=mdns.Server(wifi.radio),
+    random_source=cm_fake_random,
+)
 # led = LED("led1", digitalio.DigitalInOut(board.D13))
 led = LED("led1", None)
 matter.add_device(led)

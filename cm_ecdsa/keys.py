@@ -345,9 +345,7 @@ class VerifyingKey:
         # s2 = oid_ecPublicKey,oid_curve
         oid_pk, rest = der.remove_object(s2)
         if not oid_pk == oid_ecPublicKey:
-            raise der.UnexpectedDER(
-                f"Unexpected object identifier in DER encoding: {oid_pk!r}"
-            )
+            raise der.UnexpectedDER(f"Unexpected object identifier in DER encoding: {oid_pk!r}")
         curve = Curve.from_der(rest, valid_curve_encodings)
         point_str, empty = der.remove_bitstring(point_str_bitstring, 0)
         if empty != b"":

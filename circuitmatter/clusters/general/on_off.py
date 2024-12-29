@@ -2,8 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-import enum
-
+import cm_enum as enum
 from circuitmatter import data_model, tlv
 
 

@@ -11,10 +11,12 @@ except AttributeError:
     def sha1(data=b""):
         return hashlib.new("sha1", data)
 
+
 try:
     sha256 = hashlib.sha256
 except AttributeError:
     # CircuitPython hashlib does not support sha256. Use the Python equivalent.
     import adafruit_hashlib
+
     def sha256(data=b""):
         return adafruit_hashlib.new("sha256", data)

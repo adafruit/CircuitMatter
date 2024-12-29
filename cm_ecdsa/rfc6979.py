@@ -15,8 +15,9 @@ Many thanks to Coda Hale for his implementation in Go language:
     https://github.com/codahale/rfc6979
 """
 
-import cm_hmac as hmac
 from binascii import hexlify
+
+import cm_hmac as hmac
 
 from .util import number_to_string, number_to_string_crop
 

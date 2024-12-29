@@ -2,12 +2,11 @@
 #
 # SPDX-License-Identifier: MIT
 
-from abc import ABC
-
 from circuitmatter.clusters.system_model import binding, descriptor, user_label
 
 
-class SimpleDevice(ABC):
+# abstract
+class SimpleDevice:
     def __init__(self, name):
         self.name = name
         self.servers = []

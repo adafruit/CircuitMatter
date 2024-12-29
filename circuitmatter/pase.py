@@ -5,8 +5,7 @@
 import hashlib
 import struct
 
-from cryptography.hazmat.primitives.ciphers.aead import AESCCM
-
+from cm_aesccm import AESCCM
 from cm_ecdsa.curves import NIST256p
 from cm_ecdsa.ellipticcurve import AbstractPoint, Point, PointJacobi
 

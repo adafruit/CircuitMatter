@@ -2,9 +2,14 @@
 #
 # SPDX-License-Identifier: MIT
 
-import enum
 import struct
-from typing import Optional
+
+try:
+    from typing import Optional
+except ImportError:
+    pass
+
+import cm_enum as enum
 
 from . import tlv
 from .protocol import ProtocolId

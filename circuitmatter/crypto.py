@@ -2,19 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-try:
-    import enum
-except ImportError:
-    class enum:
-        class IntEnum:
-            pass
-
 import hashlib
 import struct
 
-from cm_sha import sha256
 import cm_ecdsa as ecdsa
+import cm_enum as enum
 import cm_hmac as hmac
+from cm_sha import sha256
 
 from . import tlv
 

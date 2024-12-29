@@ -4,28 +4,22 @@
 
 from __future__ import annotations
 
-try:
-    import enum
-except ImportError:
-    class enum:
-        class IntEnum:
-            pass
-        pass
-
 import math
 import struct
 
 try:
+    from collections.abc import Iterable
     from typing import (
         AnyStr,
         Generic,
-        Iterable,
         Literal,
         TypeVar,
         overload,
     )
 except ImportError:
     pass
+
+import cm_enum as enum
 
 # As a byte string to save space.
 TAG_LENGTH = b"\x00\x01\x02\x04\x02\x04\x06\x08"
@@ -39,15 +33,16 @@ def _mro(cls):
         return [object]
     return [cls] + _mro_merge([_mro(base) for base in cls.__bases__])
 
+
 def _mro_merge(mros):
-    if not any(mros): # all lists are empty
+    if not any(mros):  # all lists are empty
         return []  # base case
     for candidate, *_ in mros:
         if all(candidate not in tail for _, *tail in mros):
-            return [candidate] + _mro_merge([tail if head is candidate else [head, *tail]
-                                        for head, *tail in mros])
-    else:
-        raise TypeError("No legal mro")
+            return [candidate] + _mro_merge([
+                tail if head is candidate else [head] + tail for head, *tail in mros
+            ])
+    raise TypeError("No legal mro")
 
 
 class ElementType(enum.IntEnum):

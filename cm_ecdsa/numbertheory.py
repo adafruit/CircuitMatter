@@ -117,36 +117,29 @@ def polynomial_exp_mod(base, exponent, polymod, p):
     return s
 
 
-def jacobi(a, n):
-    """Jacobi symbol"""
-
-    # Based on the Handbook of Applied Cryptography (HAC), algorithm 2.149.
-
-    # This function has been tested by comparison with a small
-    # table printed in HAC, and by extensive use in calculating
-    # modular square roots.
-
-    if not n >= 3:
-        raise JacobiError("n must be larger than 2")
-    if not n % 2 == 1:
-        raise JacobiError("n must be odd")
-    a = a % n
-    if a == 0:
-        return 0
-    if a == 1:
-        return 1
-    a1, e = a, 0
-    while a1 % 2 == 0:
-        a1, e = a1 // 2, e + 1
-    if e % 2 == 0 or n % 8 == 1 or n % 8 == 7:
-        s = 1
+def jacobi(n, k):
+    print(n, k)
+    """Jacobi symbol."""
+    # Translated from Lua implementation in https://en.wikipedia.org/wiki/Jacobi_symbol"""
+    # Tested against previous algorithm here with a single longint case that came from
+    # a running program.
+    assert k > 0 and k % 2 == 1
+    n = n % k
+    t = 1
+    while n != 0:
+        while n % 2 == 0:
+            n = n // 2
+            r = k % 8
+            if r == 3 or r == 5:
+                t = -t
+        n, k = k, n
+        if n % 4 == 3 and k % 4 == 3:
+            t = -t
+        n = n % k
+    if k == 1:
+        return t
     else:
-        s = -1
-    if a1 == 1:
-        return s
-    if n % 4 == 3 and a1 % 4 == 3:
-        s = -s
-    return s * jacobi(n % a1, a1)
+        return 0
 
 
 def square_root_mod_prime(a, p):

@@ -2,12 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-try:
-    import enum
-except ImportError:
-    class enum:
-        class IntEnum:
-            pass
+import cm_enum as enum
 
 
 class SecureProtocolOpcode(enum.IntEnum):
