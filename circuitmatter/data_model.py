@@ -8,14 +8,12 @@ import struct
 import traceback
 
 try:
-    from collections.abc import Iterable
-    from typing import Union
+    from typing import Union, Iterable
 except ImportError:
     pass
 
-import cm_enum as enum
-
 from . import interaction_model, tlv
+import cm_enum as enum
 
 ATTRIBUTES_KEY = "a"
 

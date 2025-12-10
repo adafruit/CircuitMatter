@@ -8,10 +8,10 @@ import math
 import struct
 
 try:
-    from collections.abc import Iterable
     from typing import (
         AnyStr,
         Generic,
+        Iterable,
         Literal,
         TypeVar,
         overload,
@@ -20,6 +20,7 @@ except ImportError:
     pass
 
 import cm_enum as enum
+
 
 # As a byte string to save space.
 TAG_LENGTH = b"\x00\x01\x02\x04\x02\x04\x06\x08"
@@ -533,23 +534,15 @@ class EnumMember(IntMember):
         super().__init__(tag, octets=2, signed=False, **kwargs)
 
     def __set__(self, obj, value):
-        if not isinstance(value, self.enum_class):
-            raise ValueError(f"Value must be a {self.enum_class}")
-        super().__set__(obj, value.value)
+        super().__set__(obj, value)
 
     def __get__(self, obj, objtype=None) -> enum.Enum | None:
         value = super().__get__(obj, objtype)
-        if value is not None:
-            return self.enum_class(value)
-        return
-
-    def print(self, value):
-        return self.enum_class(value).name
+        return value
 
 
 class BitmapMember(EnumMember):
-    def print(self, value):
-        return repr(self.enum_class(value))
+    pass
 
 
 class FloatMember(NumberMember):

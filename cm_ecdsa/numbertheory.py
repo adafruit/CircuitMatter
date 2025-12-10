@@ -118,7 +118,6 @@ def polynomial_exp_mod(base, exponent, polymod, p):
 
 
 def jacobi(n, k):
-    print(n, k)
     """Jacobi symbol."""
     # Translated from Lua implementation in https://en.wikipedia.org/wiki/Jacobi_symbol"""
     # Tested against previous algorithm here with a single longint case that came from

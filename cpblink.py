@@ -6,15 +6,16 @@
 
 import os
 
-import adafruit_connection_manager
 import board
 import digitalio
-import mdns
-import wifi
 
 import circuitmatter as cm
 import cm_fake_random
 from circuitmatter.device_types.lighting import on_off
+
+import adafruit_connection_manager
+import mdns
+import wifi
 
 try:
     print("removing matter-device-state.json if present")

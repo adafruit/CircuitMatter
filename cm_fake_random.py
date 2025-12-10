@@ -9,7 +9,10 @@ random.seed(0)
 
 
 def urandom(nbytes):
-    return random.randbytes(nbytes)
+    b = bytearray(nbytes)
+    for i in range(nbytes):
+        b[i] = random.randint(0, 255)
+    return b
 
 
 def randbelow(n):

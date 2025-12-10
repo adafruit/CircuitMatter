@@ -57,8 +57,13 @@ def entropy_to_bits(ent_256):
     return bin(int.from_bytes(ent_256, "big"))[2:].zfill(len(ent_256) * 8)
 
 
-def orderlen(order):
-    return (1 + len("%x" % order)) // 2  # bytes
+def bytes_needed(order):
+    num_bits = order.bit_length()
+    num_bytes = num_bits // 8
+    if num_bits % 8 > 0:
+        # Need another byte for less than a byte's worth of bits.
+        num_bytes += 1
+    return num_bytes
 
 
 def randrange(order, entropy=None):
@@ -85,113 +90,8 @@ def randrange(order, entropy=None):
             return rand_num
 
 
-class PRNG:
-    # this returns a callable which, when invoked with an integer N, will
-    # return N pseudorandom bytes. Note: this is a short-term PRNG, meant
-    # primarily for the needs of randrange_from_seed__trytryagain(), which
-    # only needs to run it a few times per seed. It does not provide
-    # protection against state compromise (forward security).
-    def __init__(self, seed):
-        self.generator = self.block_generator(seed)
-
-    def __call__(self, numbytes):
-        a = [next(self.generator) for i in range(numbytes)]
-        return bytes(a)
-
-    def block_generator(self, seed):
-        counter = 0
-        while True:
-            for byte in sha256(("prng-%d-%s" % (counter, seed)).encode()).digest():
-                yield byte
-            counter += 1
-
-
-def randrange_from_seed__overshoot_modulo(seed, order):
-    # hash the data, then turn the digest into a number in [1,order).
-    #
-    # We use David-Sarah Hopwood's suggestion: turn it into a number that's
-    # sufficiently larger than the group order, then modulo it down to fit.
-    # This should give adequate (but not perfect) uniformity, and simple
-    # code. There are other choices: try-try-again is the main one.
-    base = PRNG(seed)(2 * orderlen(order))
-    number = (int(binascii.hexlify(base), 16) % (order - 1)) + 1
-    assert 1 <= number < order, (1, number, order)
-    return number
-
-
-def lsb_of_ones(numbits):
-    return (1 << numbits) - 1
-
-
-def bits_and_bytes(order):
-    bits = int(math.log(order - 1, 2) + 1)
-    bytes = bits // 8
-    extrabits = bits % 8
-    return bits, bytes, extrabits
-
-
-# the following randrange_from_seed__METHOD() functions take an
-# arbitrarily-sized secret seed and turn it into a number that obeys the same
-# range limits as randrange() above. They are meant for deriving consistent
-# signing keys from a secret rather than generating them randomly, for
-# example a protocol in which three signing keys are derived from a master
-# secret. You should use a uniformly-distributed unguessable seed with about
-# curve.baselen bytes of entropy. To use one, do this:
-#   seed = os.urandom(curve.baselen) # or other starting point
-#   secexp = ecdsa.util.randrange_from_seed__trytryagain(sed, curve.order)
-#   sk = SigningKey.from_secret_exponent(secexp, curve)
-
-
-def randrange_from_seed__truncate_bytes(seed, order, hashmod=sha256):
-    # hash the seed, then turn the digest into a number in [1,order), but
-    # don't worry about trying to uniformly fill the range. This will lose,
-    # on average, four bits of entropy.
-    bits, _bytes, extrabits = bits_and_bytes(order)
-    if extrabits:
-        _bytes += 1
-    base = hashmod(seed).digest()[:_bytes]
-    base = "\x00" * (_bytes - len(base)) + base
-    number = 1 + int(binascii.hexlify(base), 16)
-    assert 1 <= number < order
-    return number
-
-
-def randrange_from_seed__truncate_bits(seed, order, hashmod=sha256):
-    # like string_to_randrange_truncate_bytes, but only lose an average of
-    # half a bit
-    bits = int(math.log(order - 1, 2) + 1)
-    maxbytes = (bits + 7) // 8
-    base = hashmod(seed).digest()[:maxbytes]
-    base = "\x00" * (maxbytes - len(base)) + base
-    topbits = 8 * maxbytes - bits
-    if topbits:
-        base = int2byte(ord(base[0]) & lsb_of_ones(topbits)) + base[1:]
-    number = 1 + int(binascii.hexlify(base), 16)
-    assert 1 <= number < order
-    return number
-
-
-def randrange_from_seed__trytryagain(seed, order):
-    # figure out exactly how many bits we need (rounded up to the nearest
-    # bit), so we can reduce the chance of looping to less than 0.5 . This is
-    # specified to feed from a byte-oriented PRNG, and discards the
-    # high-order bits of the first byte as necessary to get the right number
-    # of bits. The average number of loops will range from 1.0 (when
-    # order=2**k-1) to 2.0 (when order=2**k+1).
-    assert order > 1
-    bits, bytes, extrabits = bits_and_bytes(order)
-    generate = PRNG(seed)
-    while True:
-        extrabyte = b""
-        if extrabits:
-            extrabyte = int2byte(ord(generate(1)) & lsb_of_ones(extrabits))
-        guess = string_to_number(extrabyte + generate(bytes)) + 1
-        if 1 <= guess < order:
-            return guess
-
-
-def number_to_string(num, order):
-    l = orderlen(order)
+def number_to_string (num, order):
+    l = bytes_needed(order)
     fmt_str = "%0" + str(2 * l) + "x"
     string = binascii.unhexlify((fmt_str % num).encode())
     assert len(string) == l, (len(string), l)
@@ -199,7 +99,7 @@ def number_to_string(num, order):
 
 
 def number_to_string_crop(num, order):
-    l = orderlen(order)
+    l = bytes_needed(order)
     fmt_str = "%0" + str(2 * l) + "x"
     string = binascii.unhexlify((fmt_str % num).encode())
     return string[:l]
@@ -210,7 +110,7 @@ def string_to_number(string):
 
 
 def string_to_number_fixedlen(string, order):
-    l = orderlen(order)
+    l = bytes_needed(order)
     assert len(string) == l, (len(string), l)
     return int(binascii.hexlify(string), 16)
 
@@ -401,7 +301,7 @@ def sigdecode_string(signature, order):
     :rtype: tuple of ints
     """
     signature = normalise_bytes(signature)
-    l = orderlen(order)
+    l = bytes_needed(order)
     if not len(signature) == 2 * l:
         raise MalformedSignature(
             f"Invalid length of signature, expected {2 * l} bytes long, provided string is {len(signature)} bytes long"
@@ -437,7 +337,7 @@ def sigdecode_strings(rs_strings, order):
     (r_str, s_str) = rs_strings
     r_str = normalise_bytes(r_str)
     s_str = normalise_bytes(s_str)
-    l = orderlen(order)
+    l = bytes_needed(order)
     if not len(r_str) == l:
         raise MalformedSignature(
             "Invalid length of first string ('r' parameter), "
